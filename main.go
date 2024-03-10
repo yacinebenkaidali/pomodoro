@@ -2,11 +2,15 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/faiface/beep"
+	"github.com/faiface/beep/mp3"
+	"github.com/faiface/beep/speaker"
 	"github.com/k0kubun/go-ansi"
 	"github.com/schollz/progressbar/v3"
 )
@@ -46,8 +50,24 @@ func main() {
 	)
 
 	done := make(chan struct{})
+	soundsCh := make(chan struct{})
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	streamerWork, err := playBeep("./end_of_work_session.mp3")
+	if err != nil {
+
+	}
+	defer streamerWork.Close()
+	streamerRest, err := playBeep("./end_of_rest_session.mp3")
+	if err != nil {
+
+	}
+	streamerEnd, err := playBeep("./end_of_all_sessions.mp3")
+	if err != nil {
+
+	}
+	defer streamerEnd.Close()
 
 	go func() {
 		for i := 0; i < nbRounds; i++ {
@@ -72,6 +92,11 @@ func main() {
 					}
 				}
 			}
+			speaker.Play(beep.Seq(streamerWork, beep.Callback(func() {
+				soundsCh <- struct{}{}
+			})))
+			<-soundsCh
+			streamerWork.Seek(0)
 			now = time.Now()
 			restBar.Reset()
 			restBar.RenderBlank()
@@ -94,22 +119,47 @@ func main() {
 				}
 			}
 			//make a sound here
-			fmt.Print("\033[H\033[2J") //clear the console
+			speaker.Play(beep.Seq(streamerRest, beep.Callback(func() {
+				soundsCh <- struct{}{}
+			})))
+			streamerRest.Seek(0)
+			<-soundsCh
+			if err != nil {
+				continue
+			}
+			fmt.Print("\033[H\033[2J")
 		}
 		done <- struct{}{}
 	}()
-
-	// go func() {
-	// 	<-sigs
-	// 	done <- struct{}{}
-	// }()
 	<-done
 
-	fmt.Printf("\n %d round have passed\n", nbRounds)
+	speaker.Play(beep.Seq(streamerEnd, beep.Callback(func() {
+		soundsCh <- struct{}{}
+	})))
+	<-soundsCh
+
+	fmt.Printf("\n%d round have passed\n", nbRounds)
 }
 
 func minutesSince(t time.Time) int {
 	minutes := time.Since(t).Seconds()
 	// minutes := time.Since(t).Minutes()
 	return int(minutes)
+}
+
+func playBeep(fileName string) (beep.StreamSeekCloser, error) {
+	f, err := os.Open(fileName)
+	if err != nil {
+		return nil, err
+	}
+	streamer, format, err := mp3.Decode(f)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
+	if err != nil {
+		return nil, err
+	}
+	return streamer, nil
 }
