@@ -81,7 +81,7 @@ func main() {
 					{
 						count := minutesSince(now)
 						workBar.Add(1)
-						if count > workMinutes {
+						if count >= workMinutes {
 							break workFree
 						}
 					}
@@ -107,7 +107,7 @@ func main() {
 					{
 						count := minutesSince(now)
 						restBar.Add(1)
-						if count > restMinutes {
+						if count >= restMinutes {
 							break restFree
 						}
 					}
