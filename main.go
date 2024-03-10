@@ -15,7 +15,7 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
-const workMinutes = 5
+const workMinutes = 20
 const restMinutes = 5
 const nbRounds = 2
 
@@ -56,16 +56,16 @@ func main() {
 
 	streamerWork, err := playBeep("./end_of_work_session.mp3")
 	if err != nil {
-
+		fmt.Println(err)
 	}
 	defer streamerWork.Close()
 	streamerRest, err := playBeep("./end_of_rest_session.mp3")
 	if err != nil {
-
+		fmt.Println(err)
 	}
 	streamerEnd, err := playBeep("./end_of_all_sessions.mp3")
 	if err != nil {
-
+		fmt.Println(err)
 	}
 	defer streamerEnd.Close()
 
@@ -77,7 +77,7 @@ func main() {
 		workFree:
 			for {
 				select {
-				case <-time.Tick(1 * time.Second):
+				case <-time.Tick(1 * time.Minute):
 					{
 						count := minutesSince(now)
 						workBar.Add(1)
@@ -103,7 +103,7 @@ func main() {
 		restFree:
 			for {
 				select {
-				case <-time.Tick(1 * time.Second):
+				case <-time.Tick(1 * time.Minute):
 					{
 						count := minutesSince(now)
 						restBar.Add(1)
@@ -142,8 +142,8 @@ func main() {
 }
 
 func minutesSince(t time.Time) int {
-	minutes := time.Since(t).Seconds()
-	// minutes := time.Since(t).Minutes()
+	// minutes := time.Since(t).Seconds()
+	minutes := time.Since(t).Minutes()
 	return int(minutes)
 }
 
