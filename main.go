@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -13,11 +14,28 @@ import (
 	"github.com/faiface/beep/speaker"
 )
 
-const workMinutes = 20
-const restMinutes = 5
-const nbRounds = 2
+type Config struct {
+	NbRounds    int
+	RestMinutes int
+	WorkMinutes int
+}
+
+// Global cli config object
+var config Config
 
 func main() {
+	restMinutes := flag.Int("rest", 20, "Define the number of minutes for the current rest session")
+	workMinutes := flag.Int("work", 5, "Define the number of minutes for the current work session")
+	nbRounds := flag.Int("nbRounds", 2, "Define the number you need for this CLI to run")
+	flag.Parse()
+
+	config = Config{
+		NbRounds:    *nbRounds,
+		RestMinutes: *restMinutes,
+		WorkMinutes: *workMinutes,
+	}
+	iniitalizeProgresBars()
+
 	err := run()
 	if err != nil {
 		fmt.Fprintln(os.Stdout, err)
@@ -52,18 +70,18 @@ func run() error {
 
 	go func() {
 		currentRoundNumber := 0
-		for ; currentRoundNumber < nbRounds; currentRoundNumber++ {
+		for ; currentRoundNumber < config.NbRounds; currentRoundNumber++ {
 			now := time.Now()
 			workBar.Reset()
 			workBar.RenderBlank()
 		workFree:
 			for {
 				select {
-				case <-time.Tick(1 * time.Minute):
+				case <-time.Tick(1 * time.Second):
 					{
 						count := minutesSince(now)
 						workBar.Add(1)
-						if count >= workMinutes {
+						if count >= config.WorkMinutes {
 							break workFree
 						}
 					}
@@ -85,11 +103,11 @@ func run() error {
 		restFree:
 			for {
 				select {
-				case <-time.Tick(1 * time.Minute):
+				case <-time.Tick(1 * time.Second):
 					{
 						count := minutesSince(now)
 						restBar.Add(1)
-						if count >= restMinutes {
+						if count >= config.RestMinutes {
 							break restFree
 						}
 					}
@@ -126,8 +144,8 @@ func run() error {
 }
 
 func minutesSince(t time.Time) int {
-	// minutes := time.Since(t).Seconds()
-	minutes := time.Since(t).Minutes()
+	minutes := time.Since(t).Seconds()
+	// minutes := time.Since(t).Minutes()
 	return int(minutes)
 }
 
