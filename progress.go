@@ -12,7 +12,7 @@ var workBar *progressbar.ProgressBar
 var restBar *progressbar.ProgressBar
 
 func iniitalizeProgresBars() {
-	restBar = progressbar.NewOptions(config.RestMinutes,
+	restBar = progressbar.NewOptions(60*config.RestMinutes,
 		progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
 		progressbar.OptionEnableColorCodes(true),
 		progressbar.OptionShowBytes(false),
@@ -27,7 +27,7 @@ func iniitalizeProgresBars() {
 		}),
 	)
 
-	workBar = progressbar.NewOptions(config.WorkMinutes,
+	workBar = progressbar.NewOptions(60*config.WorkMinutes,
 		progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
 		progressbar.OptionEnableColorCodes(true),
 		progressbar.OptionShowBytes(false),

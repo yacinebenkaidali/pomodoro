@@ -24,9 +24,9 @@ type Config struct {
 var config Config
 
 func main() {
-	restMinutes := flag.Int("rest", 20, "Define the number of minutes for the current rest session")
-	workMinutes := flag.Int("work", 5, "Define the number of minutes for the current work session")
-	nbRounds := flag.Int("nbRounds", 2, "Define the number you need for this CLI to run")
+	workMinutes := flag.Int("work", 25, "Define the number of minutes for the current work session")
+	restMinutes := flag.Int("rest", 5, "Define the number of minutes for the current rest session")
+	nbRounds := flag.Int("nbRounds", 2, "Define the number of work/rest rounds you need this CLI to run for")
 	flag.Parse()
 
 	config = Config{
@@ -77,7 +77,7 @@ func run() error {
 		workFree:
 			for {
 				select {
-				case <-time.Tick(1 * time.Minute):
+				case <-time.Tick(1 * time.Second):
 					{
 						count := minutesSince(now)
 						workBar.Add(1)
@@ -103,7 +103,7 @@ func run() error {
 		restFree:
 			for {
 				select {
-				case <-time.Tick(1 * time.Minute):
+				case <-time.Tick(1 * time.Second):
 					{
 						count := minutesSince(now)
 						restBar.Add(1)
@@ -144,7 +144,6 @@ func run() error {
 }
 
 func minutesSince(t time.Time) int {
-	// minutes := time.Since(t).Seconds()
 	minutes := time.Since(t).Minutes()
 	return int(minutes)
 }
