@@ -11,8 +11,6 @@ import (
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/mp3"
 	"github.com/faiface/beep/speaker"
-	"github.com/k0kubun/go-ansi"
-	"github.com/schollz/progressbar/v3"
 )
 
 const workMinutes = 20
@@ -20,35 +18,14 @@ const restMinutes = 5
 const nbRounds = 2
 
 func main() {
-	workBar := progressbar.NewOptions(workMinutes,
-		progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
-		progressbar.OptionEnableColorCodes(true),
-		progressbar.OptionShowBytes(false),
-		progressbar.OptionSetWidth(25),
-		progressbar.OptionSetDescription("[red][Work session progress][reset]"),
-		progressbar.OptionSetTheme(progressbar.Theme{
-			Saucer:        "[red]=[reset]",
-			SaucerHead:    "[red]>[reset]",
-			SaucerPadding: " ",
-			BarStart:      "[",
-			BarEnd:        "]",
-		}),
-	)
-	restBar := progressbar.NewOptions(restMinutes,
-		progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
-		progressbar.OptionEnableColorCodes(true),
-		progressbar.OptionShowBytes(false),
-		progressbar.OptionSetWidth(25),
-		progressbar.OptionSetDescription("[blue][Take a break, you deserve it][reset]"),
-		progressbar.OptionSetTheme(progressbar.Theme{
-			Saucer:        "[blue]=[reset]",
-			SaucerHead:    "[blue]>[reset]",
-			SaucerPadding: " ",
-			BarStart:      "[",
-			BarEnd:        "]",
-		}),
-	)
+	err := run()
+	if err != nil {
+		fmt.Fprintln(os.Stdout, err)
+		os.Exit(1)
+	}
+}
 
+func run() error {
 	done := make(chan struct{})
 	soundsCh := make(chan struct{})
 	sigs := make(chan os.Signal, 1)
@@ -56,21 +33,26 @@ func main() {
 
 	streamerWork, err := playBeep("./end_of_work_session.mp3")
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
-	defer streamerWork.Close()
 	streamerRest, err := playBeep("./end_of_rest_session.mp3")
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
 	streamerEnd, err := playBeep("./end_of_all_sessions.mp3")
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
-	defer streamerEnd.Close()
+
+	defer func() {
+		defer streamerWork.Close()
+		defer streamerWork.Close()
+		defer streamerEnd.Close()
+	}()
 
 	go func() {
-		for i := 0; i < nbRounds; i++ {
+		currentRoundNumber := 0
+		for ; currentRoundNumber < nbRounds; currentRoundNumber++ {
 			now := time.Now()
 			workBar.Reset()
 			workBar.RenderBlank()
@@ -130,6 +112,8 @@ func main() {
 			fmt.Print("\033[H\033[2J")
 		}
 		done <- struct{}{}
+
+		fmt.Printf("\n%d round have passed\n", currentRoundNumber)
 	}()
 	<-done
 
@@ -138,7 +122,7 @@ func main() {
 	})))
 	<-soundsCh
 
-	fmt.Printf("\n%d round have passed\n", nbRounds)
+	return nil
 }
 
 func minutesSince(t time.Time) int {
