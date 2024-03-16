@@ -77,7 +77,7 @@ func run() error {
 		workFree:
 			for {
 				select {
-				case <-time.Tick(1 * time.Second):
+				case <-time.Tick(1 * time.Minute):
 					{
 						count := minutesSince(now)
 						workBar.Add(1)
@@ -103,7 +103,7 @@ func run() error {
 		restFree:
 			for {
 				select {
-				case <-time.Tick(1 * time.Second):
+				case <-time.Tick(1 * time.Minute):
 					{
 						count := minutesSince(now)
 						restBar.Add(1)
@@ -144,8 +144,8 @@ func run() error {
 }
 
 func minutesSince(t time.Time) int {
-	minutes := time.Since(t).Seconds()
-	// minutes := time.Since(t).Minutes()
+	// minutes := time.Since(t).Seconds()
+	minutes := time.Since(t).Minutes()
 	return int(minutes)
 }
 
